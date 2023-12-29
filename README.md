@@ -5,7 +5,7 @@ To create a virtual environment, you can do that with GUI or, in terminal, `cond
 
 For all packages required, use pycharm's default installation first. If that doesn't work, just google "conda install pkg_name" and follow the first instruction. E.g. see this link to see an installation-command: 'https://anaconda.org/conda-forge/box2d-py'
 
-Once you've installed all the packages, you can run 'script.py' to see if it works or not.
+Once you've installed all the packages, you can run 'script.py' to see if it works or not. (If you are using pycharm, just right-click the file and click run)
 
 END OF MUX's comments.
 
