@@ -1,3 +1,16 @@
+Mux:
+Install the newest Anaconda, and you will see a default 'base' environment. Do not use it. Instead, create a new one and install everything inside this venv. If you are using pycharm, you can set the project interpreter to be the virtual conda environment you just created. 
+
+To create a virtual environment, you can do that with GUI or, in terminal, `conda create any_env_name`. Then, `conda activate any_env_name` to activate the env. You will see something like '(frlresearch) muxingwang@Muxings-MacBook-Air gym-examples % '  in your terminal. 
+
+For all packages required, use pycharm's default installation first. If that doesn't work, just google "conda install pkg_name" and follow the first instruction. E.g. see this link to see a install-command: 'https://anaconda.org/conda-forge/box2d-py'
+
+Once you've installed all the packages, you can run 'script.py' to see if it works or not.
+
+END OF MUX's comments.
+
+
+
 This repository is no longer maintained, as Gym is not longer maintained and all future maintenance of it will occur in the replacing [Gymnasium](https://github.com/Farama-Foundation/Gymnasium) library. You can contribute Gymnasium examples to the Gymnasium repository and docs directly if you would like to. If you'd like to learn more about the transition from Gym to Gymnasium, you can read more about it [here](https://farama.org/Announcing-The-Farama-Foundation).
 
 # Gym Examples
