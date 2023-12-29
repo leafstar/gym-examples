@@ -1,7 +1,8 @@
-import gym
-from gym import spaces
-import pygame
 import numpy as np
+import pygame
+
+import gymnasium as gym
+from gymnasium import spaces
 
 
 class GridWorldEnv(gym.Env):
