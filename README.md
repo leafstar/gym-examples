@@ -7,7 +7,6 @@ For all packages required, use pycharm's default installation first. If that doe
 
 Once you've installed all the packages, you can run 'script.py' to see if it works or not. (If you are using pycharm, just right-click the file and click run)
 
-
 END OF MUX's comments.
 
 
