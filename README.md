@@ -9,7 +9,9 @@ Once you've installed all the packages, you can run 'script.py' to see if it wor
 
 END OF MUX's comments.
 
+TODO: We need to extend singleton to distrbuted learning, which means we have to setup K agents with K different environments. We have to determine the code structure, like where should we initiate the agents, how to sync, blabla.
 
+END TODO
 
 This repository is no longer maintained, as Gym is not longer maintained and all future maintenance of it will occur in the replacing [Gymnasium](https://github.com/Farama-Foundation/Gymnasium) library. You can contribute Gymnasium examples to the Gymnasium repository and docs directly if you would like to. If you'd like to learn more about the transition from Gym to Gymnasium, you can read more about it [here](https://farama.org/Announcing-The-Farama-Foundation).
 
