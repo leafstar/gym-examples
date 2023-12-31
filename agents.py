@@ -59,8 +59,10 @@ class Agent(ABC):
         best_reward = -1e6  # best reward for current state
 
         for a in range(self.n_acts):  # find argmax_a (Q(s,a))
-            # hashable = frozenset(obs.items())
-            obs_n = (tuple(obs['agent']), tuple(obs['target']))
+            if obs.__class__ == dict:
+                obs_n = (tuple(obs['agent']), tuple(obs['target']))
+            elif obs.__class__ == int:
+                obs_n = obs
             value = self.q_table[(obs_n, a)]
             if value >= best_reward:
                 best_reward = value
@@ -124,8 +126,13 @@ class QLearningAgent(Agent):
         """
         ### PUT YOUR CODE HERE ###
         best_next_q_value = -1e6
-        obs_tuple = (tuple(obs['agent']), tuple(obs['target']))
-        next_obs_tuple = (tuple(next_obs['agent']), tuple(next_obs['target']))
+        if obs.__class__ == dict:
+            obs_tuple = (tuple(obs['agent']), tuple(obs['target']))
+            next_obs_tuple = (tuple(next_obs['agent']), tuple(next_obs['target']))
+        elif obs.__class__ == int:
+            obs_tuple = obs
+            next_obs_tuple = next_obs
+
         for a in range(self.n_acts):
             if self.q_table[(next_obs_tuple,a)] >= best_next_q_value:
                 best_next_q_value = self.q_table[(next_obs_tuple,a)]

@@ -5,11 +5,12 @@ from constant import CONSTANTS as CONSTANTS
 from agents import QLearningAgent
 from evaluate import evaluate
 from gym_examples.envs.grid_world import GridWorldEnv
+
 CONFIG = {
-    "eval_episodes": 500,
+    "eval_episodes": 20,
     "eval_freq": 1000,
     "alpha": 0.5,
-    "epsilon": 0.0,
+    "epsilon": 0.3,
 }
 CONFIG.update(CONSTANTS)
 
@@ -67,7 +68,7 @@ def train(env, config, output=True):
     evaluation_return_means = []
     evaluation_negative_returns = []
 
-    for eps_num in tqdm(range(1, config["total_eps"]+1)):
+    for eps_num in tqdm(range(1, config["total_eps"] + 1)):
         obs, info = env.reset()
         episodic_return = 0
         t = 0
@@ -98,17 +99,16 @@ def train(env, config, output=True):
 
 
 if __name__ == "__main__":
-
     from gymnasium.envs.registration import register
 
     register(
-        id="gym_examples/GridWorld-v0",
-        entry_point="gym_examples.envs:GridWorldEnv",
+        id="gym_examples/FrozenLake-v2",
+        entry_point="gym_examples.envs:FrozenLakeEnv",
         max_episode_steps=300,
     )
 
-    env = gym.make(CONFIG["env"])
-    env = gym.make('gym_examples/GridWorld-v0')
+    # env = gym.make(CONFIG["env"])
+    env = gym.make('gym_examples/FrozenLake-v2', render_mode='human')
     wrapped_env = FlattenObservation(env)
     total_reward, _, _, q_table = train(env, CONFIG)
     # print()

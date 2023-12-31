@@ -304,8 +304,8 @@ class FrozenLakeEnv(Env):
         self.s = s
         self.lastaction = a
 
-        if self.render_mode == "human":
-            self.render()
+        # if self.render_mode == "human":
+        #     self.render()
         # truncation=False as the time limit is handled by the `TimeLimit` wrapper added during `make`
         return int(s), r, t, False, {"prob": p}
 
@@ -319,8 +319,8 @@ class FrozenLakeEnv(Env):
         self.s = categorical_sample(self.initial_state_distrib, self.np_random)
         self.lastaction = None
 
-        if self.render_mode == "human":
-            self.render()
+        # if self.render_mode == "human":
+        #     self.render()
         return int(self.s), {"prob": 1}
 
     def render(self):
