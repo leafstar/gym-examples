@@ -95,35 +95,6 @@ class DoTrain(threading.Thread):
         self.trainStep(self.shared.agent, self.shared.env, self.shared.config)
 
 
-# myshared = SharedObj()
-# threads = [ DoWork(shared=myshared, name='a'), 
-#             DoWork(shared=myshared, name='b')
-# ]
-
-def trainStep(agent: QLearningAgent, env, config):
-    obs, info = env.reset()
-    episodic_return = 0
-    t = 0
-    max_steps = config["total_eps"] * config["eps_max_steps"]
-
-    while t < config["eps_max_steps"]:
-        agent.schedule_hyperparameters(agent.step, max_steps)
-        act = agent.act(obs)
-        next_obs, reward, done, _, info = env.step(act)
-        agent.learn(obs, act, reward, next_obs, done)
-
-        t += 1
-        # step_counter += 1
-        agent.step += 1         # TODO: Warning!: Check thios
-        episodic_return += reward
-
-        if done:
-            break
-
-        obs = next_obs
-    # TODO: reset agent ???
-    # total_reward += episodic_return
-
 def train(config, output=True):
     """
     Train and evaluate Q-Learning on given environment with provided hyperparameters
