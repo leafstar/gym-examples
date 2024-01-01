@@ -44,6 +44,7 @@ class Agent(ABC):
         self.gamma: float = gamma
 
         self.q_table: DefaultDict = defaultdict(lambda: 0)
+        self.step = 0
 
     def act(self, obs) -> int:
         """Implement the epsilon-greedy action selection here
