@@ -1,3 +1,4 @@
+import random
 from contextlib import closing
 from io import StringIO
 from os import path
@@ -10,7 +11,6 @@ from gymnasium import Env, spaces, utils
 from gymnasium.envs.toy_text.utils import categorical_sample
 from gymnasium.error import DependencyNotInstalled
 from gymnasium.utils import seeding
-
 
 LEFT = 0
 DOWN = 1
@@ -54,7 +54,7 @@ def is_valid(board: List[List[str]], max_size: int) -> bool:
 
 
 def generate_random_map(
-    size: int = 8, p: float = 0.8, seed: Optional[int] = None
+        size: int = 8, p: float = 0.8, seed: Optional[int] = None
 ) -> List[str]:
     """Generates a random valid map (one that has a path from start to goal)
 
@@ -216,11 +216,11 @@ class FrozenLakeEnv(Env):
     }
 
     def __init__(
-        self,
-        render_mode: Optional[str] = None,
-        desc=None,
-        map_name="4x4",
-        is_slippery=True,
+            self,
+            render_mode: Optional[str] = None,
+            desc=None,
+            map_name="4x4",
+            is_slippery=True,
     ):
         if desc is None and map_name is None:
             desc = generate_random_map()
@@ -242,6 +242,13 @@ class FrozenLakeEnv(Env):
             return row * ncol + col
 
         def inc(row, col, a):
+            """
+            given row, col and action 'a', return the new row and col
+            @param row: row number
+            @param col: column number
+            @param a: action
+            @return: new (row,col) pair
+            """
             if a == LEFT:
                 col = max(col - 1, 0)
             elif a == DOWN:
@@ -253,6 +260,14 @@ class FrozenLakeEnv(Env):
             return (row, col)
 
         def update_probability_matrix(row, col, action):
+            """
+            based on current row, col and action, return the new state, reward and an indicator
+            that if the game terminates or not.
+            @param row: current row number
+            @param col: current column number
+            @param action: current action
+            @return: new state, reward, terminated
+            """
             newrow, newcol = inc(row, col, action)
             newstate = to_s(newrow, newcol)
             newletter = desc[newrow, newcol]
@@ -264,15 +279,21 @@ class FrozenLakeEnv(Env):
             for col in range(ncol):
                 s = to_s(row, col)
                 for a in range(4):
+                    # for (s,a) pair, get the probability list li
                     li = self.P[s][a]
-                    letter = desc[row, col]
-                    if letter in b"GH":
+                    letter = desc[row, col]  # get the current position_type
+                    if letter in b"GH":  # if the current position is Goal or Hole
+                        # with prob 1 it transits to the same state with 0 reword. Termination is true.
                         li.append((1.0, s, 0, True))
                     else:
                         if is_slippery:
-                            for b in [(a - 1) % 4, a, (a + 1) % 4]:
+                            prob1 = random.uniform(0, 1)
+                            prob2 = random.uniform(0, 1 - prob1)
+                            prob3 = 1 - prob1 - prob2
+                            prob_list = [prob1, prob2, prob3]
+                            for i, b in enumerate([(a - 1) % 4, a, (a + 1) % 4]):
                                 li.append(
-                                    (1.0 / 3.0, *update_probability_matrix(row, col, b))
+                                    (prob_list[i], *update_probability_matrix(row, col, b))
                                 )
                         else:
                             li.append((1.0, *update_probability_matrix(row, col, a)))
@@ -310,10 +331,10 @@ class FrozenLakeEnv(Env):
         return int(s), r, t, False, {"prob": p}
 
     def reset(
-        self,
-        *,
-        seed: Optional[int] = None,
-        options: Optional[dict] = None,
+            self,
+            *,
+            seed: Optional[int] = None,
+            options: Optional[dict] = None,
     ):
         super().reset(seed=seed)
         self.s = categorical_sample(self.initial_state_distrib, self.np_random)
@@ -357,7 +378,7 @@ class FrozenLakeEnv(Env):
                 self.window_surface = pygame.Surface(self.window_size)
 
         assert (
-            self.window_surface is not None
+                self.window_surface is not None
         ), "Something went wrong with pygame. This should never happen."
 
         if self.clock is None:
@@ -467,7 +488,6 @@ class FrozenLakeEnv(Env):
 
             pygame.display.quit()
             pygame.quit()
-
 
 # Elf and stool from https://franuka.itch.io/rpg-snow-tileset
 # All other assets by Mel Tillery http://www.cyaneus.com/

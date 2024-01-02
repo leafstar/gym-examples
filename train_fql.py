@@ -10,12 +10,12 @@ from gym_examples.envs.grid_world import GridWorldEnv
 import threading, time
 
 CONFIG = {
-    "eval_episodes": 20,
+    "eval_episodes": 3,
     "eval_freq": 1000,
     "alpha": 0.5,
-    "epsilon": 0.3,
-    "agent_count": 5,
-    "sync_freq": 10
+    "epsilon": 0.2,
+    "agent_count": 10,
+    "sync_freq": 100
 }
 CONFIG.update(CONSTANTS)
 
@@ -119,8 +119,27 @@ def train(config, output=True):
         )
         agentEnvList.append((agent, env))
 
-    'imaginary evaluate env'
+    # initialize imaginary environment
+    nA = 4
+    nS = 16
+    kappa = 0  # quantity that reflects the environment heterogeneity
+    P_avg = {s: {a: [] for a in range(nA)} for s in range(nS)}
+    for (agent, env) in agentEnvList:
+        value = 0
+        for state, value in env.P.items():
+            for action, li in value.items():
+                if len(li) == 1:  # the prob must be 1, no need to average
+                    P_avg[state][action].append(li[0])
+                else:
+                    for i, prob_tup in enumerate(li):
+                        local_prob = prob_tup[0]
+                        if len(P_avg[state][action]) != len(li):
+                            P_avg[state][action].append(
+                                [local_prob / config["agent_count"], prob_tup[1], prob_tup[2], prob_tup[3]])
+                        else: # contains all tuples needed
+                            P_avg[state][action][i][0] += local_prob / config["agent_count"]
     imaginaryEnv = gym.make('gym_examples/FrozenLake-v2', render_mode='human')
+    imaginaryEnv.P = P_avg
     # step_counter = 0
 
     total_reward = 0
@@ -174,16 +193,17 @@ def train(config, output=True):
         # total_reward += episodic_return
 
         # TODO: @muxing figure out when to eval
-        # if eps_num > 0 and eps_num % config["eval_freq"] == 0:
+        if eps_num > 0 and eps_num % config["eval_freq"] == 0:
+            mean_return, negative_returns = q_learning_eval(imaginaryEnv, config, global_q_table)
+            tqdm.write(f"EVALUATION: EP {eps_num} - MEAN RETURN {mean_return}")
+            evaluation_return_means.append(mean_return)
+            evaluation_negative_returns.append(negative_returns)
         #     mean_return, negative_returns = q_learning_eval(env, config, agent.q_table)
         #     tqdm.write(f"EVALUATION: EP {eps_num} - MEAN RETURN {mean_return}")
         #     evaluation_return_means.append(mean_return)
         #     evaluation_negative_returns.append(negative_returns)
     # return total_reward, evaluation_return_means, evaluation_negative_returns, agent.q_table
-    mean_return, negative_returns = q_learning_eval(imaginaryEnv, config, global_q_table)
-    tqdm.write(f"EVALUATION: EP {eps_num} - MEAN RETURN {mean_return}")
-    evaluation_return_means.append(mean_return)
-    evaluation_negative_returns.append(negative_returns)
+
 
     return global_q_table
     
