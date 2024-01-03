@@ -1,4 +1,8 @@
-Mux:
+Mux: 
+---(Update Jan 3 Wed)---
+I just realized that we were using asynchronous Q learning setting, which is more sophosticated to analyze. Therefore, we may need to create a sampler that allows us to do synchronous update. I will demonstrate the concepts this weekend.
+---END---
+
 Install the newest Anaconda,https://www.anaconda.com/download, and you will see a default 'base' environment. Do not use it. Instead, create a new one and install everything inside this venv. If you are using pycharm, you can set the project interpreter to be the virtual conda environment you just created. 
 
 To create a virtual environment, you can do that with GUI or, in terminal, `conda create any_env_name`. Then, `conda activate any_env_name` to activate the env. You will see something like `(frlresearch) muxingwang@Muxings-MacBook-Air gym-examples %`  in your terminal. 
