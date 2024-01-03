@@ -1,4 +1,5 @@
 Mux: 
+
 ---(Update Jan 3 Wed)---
 
 I just realized that we were using asynchronous Q learning setting, which is more sophosticated to analyze. Therefore, we may need to create a sampler that allows us to do synchronous update. I will demonstrate the concepts this weekend.
