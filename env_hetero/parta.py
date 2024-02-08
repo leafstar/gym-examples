@@ -30,7 +30,8 @@ def generate_maze(rows, cols, start_x=0, start_y=0):
 
     start_x, start_y = 0, 0
     dfs(start_x, start_y)
-
+    maze[rows-1][cols-2] = 'R'
+    maze[rows - 2][cols - 1] = 'R'
     return maze
 
 
@@ -112,7 +113,7 @@ class SimpleFrozenLake:
 
 
 class Agent:
-    def __init__(self, lam, Q0, P, reward_matrix, gamma=0.95):
+    def __init__(self, lam, Q0, P, reward_matrix, gamma=0.95, E=1, T=30000):
         self.name = "RLagent"
         self.lam = lam
         self.Q = Q0
@@ -120,6 +121,12 @@ class Agent:
         self.reward_matrix = reward_matrix
         self.gamma = gamma
         self.steps = 0
+        self.E = E
+        self.T = T
+
+    def reset(self):
+        self.steps = 0
+        self.lam = 1
 
     def getV(self):
         V = np.zeros((int(self.Q.shape[0] / 4), 1))
@@ -138,7 +145,7 @@ class Agent:
         Delta_tk = []
         Qks = []
         Vks = []
-        tol = 10e-10
+        tol = 10e-5
         max_step = 10000
         Qold = self.Q
         self.updateQ(forstar)
@@ -153,7 +160,7 @@ class Agent:
     def updateQ(self,forstar):
         # apply Bellman's Operator and soft update
         self.steps += 1
-        self.schedule_hyperparameters(self.steps,forstar)
+        self.schedule_hyperparameters(self.steps, forstar)
         # print(f"Q = {self.Q}, lam ={self.lam}")
         # print(self.lam)
         self.Q = (1 - self.lam) * self.Q + self.lam * (self.reward_matrix + self.gamma * np.matmul(self.P, self.getV()))
@@ -168,29 +175,38 @@ class Agent:
         if forstar == True:
             self.lam = 0.1
         else:
-            self.lam = 1 / np.sqrt((k+1))
-            self.lam = 1 / (k + 1)
+            # self.lam = 1 / np.sqrt((k+1))
+            # self.lam = 1 / (k + 1)
+            #self.lam = 0.1
+            #self.lam = self.E/(k+1)
+            #self.lam = 1/(k + self.E)
+            #self.lam = np.log(self.T + 1)**2 / (self.T + 1)
+            self.lam = np.log(k+1)/(k + 1)
 
 
-def train(agents, imagin_env, Qstar, kappa, max_time_step):
+def train(agents, imagin_env, Qstar, kappa, max_time_step, E = 1):
     t = 0
     maxT = max_time_step
-    E = np.floor(np.log(maxT))
     total_comm_num = 0
     Deltas = []
     Delta_sync_rounds = []
+    Qtbar_list = []
     # initialize Q_0^k
     for agent in agents:
         agent.Q = np.zeros_like(agent.Q)
+        agent.reset()
     Q_t_bar = np.mean([agent.Q for agent in agents], axis=0)
+    Q_t_bar_old = Q_t_bar
     Delta_0 = np.linalg.norm(Qstar - Q_t_bar, np.inf)
     Deltas.append(Delta_0)
 
     while True:
+        Qtbar_list.append(Q_t_bar)
         t = t+1
         for agent in agents:  # all agents local update
             agent.updateQ(forstar=False)   # Q_t^k
         Q_t_bar = np.mean([agent.Q for agent in agents], axis=0)  # Q_t bar
+
         Delta_t_norm = np.linalg.norm(Qstar - Q_t_bar, np.inf)
         # print(Delta_t_norm)
         Deltas.append(Delta_t_norm)
@@ -199,9 +215,10 @@ def train(agents, imagin_env, Qstar, kappa, max_time_step):
             Delta_sync_rounds.append(Delta_t_norm)
             for agent in agents:
                 agent.Q = Q_t_bar
-        if Delta_t_norm <= 10e-10 or t > maxT:
+        if Delta_t_norm <= 10e-5 or t > maxT:
             break
-    return Deltas, t, total_comm_num
+        Q_t_bar_old = Q_t_bar
+    return Deltas, t, total_comm_num, Qtbar_list, Delta_sync_rounds
 
 
 def analytical(t, delta0, gamma):
@@ -217,16 +234,18 @@ def analytical(t, delta0, gamma):
     """
 
     def lam(i):
-        return 1/np.sqrt((i+1))
-        # return 1 / (i+1)
+        #return 1/np.sqrt((i+1))
+        return np.log(i+1) / (i+1)
+        #return 0.1
     # print(t,np.prod(1-np.array([lam(i) for i in range(t)])*(1-gamma)),delta0)
     return np.prod(1 - np.array([lam(i) for i in range(t)]) * (1 - gamma)) * delta0
 
 
 if __name__ == '__main__':
-    random.seed(1)
+    random.seed(2)
     K = 5
-    maxT = 10000
+    maxT = 30000
+    E = np.floor(np.log(maxT))
     Pk_list = []  # a list of all local transition prob matrix
     Qkstar_list = []  # a list of all local optimal Q matrix
     Vkstar_list = []  # a list of all local optimal V matrix
@@ -239,6 +258,8 @@ if __name__ == '__main__':
     R = np.zeros((num_s * a_dim, 1))
     for k in range(K):
         Env = SimpleFrozenLake(grid_size)  # initialize the envs
+        print(f"maze {k}")
+        print_maze(Env.grid)
         Pk = Env.P  # get the transition matrix of env k
         Pk_list.append(Pk)  # add the transition matrix of env k to a list
         R = Env.R
@@ -265,37 +286,57 @@ if __name__ == '__main__':
     global_optimal, Qt_list, Vt_list = agent_global.learn(forstar=True)
     Qstar = agent_global.Q
     Vstar = agent_global.getV()
-    utils.plotQseq(local_Qt_k[0], Qstar, Qkstar_list[0])
-    # Scatter plot the 2D representation
-    plt.figure()
-    colors = plt.cm.viridis(np.linspace(0, 1, K+2))
-    plt.plot(Qstar, 'o', color = colors[0], label="Qstar")
-    plt.plot(np.mean(Qkstar_list, axis=0), 'o', color="red", label="Qkstar avg")
-    for i, Qkstar in enumerate(Qkstar_list):
-        plt.plot(Qkstar, 'o', color=colors[i+1], alpha=0.2, label=f"Q{i}_star")
-    plt.legend()
-    plt.savefig("Qstars.pdf", format="pdf", bbox_inches="tight")
-    plt.show()
-    analytical_rate = [analytical(i, np.linalg.norm(Qstar, np.inf), gamma=agent_global.gamma) for i in range(maxT)]
+
+    """
+    Animation of agent 1 approaches to the optimal Q.
+    Plot of Qstar(Img Env), Qkstar(Local) and average of Qkstar.
+    Result is the averaged local optimal Q is far away from the optimal Q in the imainary env.
+    """
+    # utils.plotQseq(local_Qt_k[0], Qstar, Qkstar_list[0])
+    # plt.figure()
+    # colors = plt.cm.viridis(np.linspace(0, 1, K+2))
+    # plt.plot(Qstar, 'o', color = colors[0], label="Qstar")
+    # plt.plot(np.mean(Qkstar_list, axis=0), 'o', color="red", label="Qkstar avg")
+    # for i, Qkstar in enumerate(Qkstar_list):
+    #     plt.plot(Qkstar, 'o', color=colors[i+1], alpha=0.2, label=f"Q{i}_star")
+    # plt.legend()
+    # plt.savefig("Qstars.pdf", format="pdf", bbox_inches="tight")
+    # plt.show()
+
+    """
+    Above is the fixed-points analysis, and from now on is the iterative analysis.
+    """
     # real_rate = [np.linalg.norm(Qstar - Q, np.inf) for Q in Qt_list] # this is for local
-    plt.figure()
+
     # plt.plot(range(len(global_optimal)), global_optimal, linestyle='-', label=f"ima_env's optimal behaviour, diminish in {agent_global.steps} steps")
-    plt.plot(range(maxT), analytical_rate, color='red', label="analytical")
+
     # plt.plot(range(len(Qt_list)), real_rate, color ="blue", label = "real diff")
+    if False:
+        for agent in agent_list:
+            """
+            force kappa to be 0
+            """
+            agent.P = Pbar
 
-    for agent in agent_list:
-        """
-        force kappa to be 0
-        """
-        agent.P = Pbar
+
+        #
     kappa = 0
-    for Pk in Pk_list:
-        if np.linalg.norm(Pbar - Pk, np.inf) > kappa:
+    for agent in agent_list:
+        agent.E = E
+        agent.T = maxT
+        if np.linalg.norm(Pbar - agent.P, np.inf) > kappa:
             kappa = np.linalg.norm(Pbar - Pk, np.inf)
-    # print(f"kappa = {kappa}")
+    print(f"kappa = {kappa}")
 
-    Deltas, T, comm_num = train(agent_list, Pbar, Qstar=Qstar, kappa=kappa, max_time_step=maxT)
-    plt.plot(range(len(Deltas)), Deltas, color="black", linestyle="dotted", label=f"fed decay to 0 {T}")
-    plt.ylim((0, 1.2))
+    Deltas, T, comm_num, Qtbar_list, Deltas_sync = train(agent_list, Pbar, Qstar=Qstar, kappa=kappa, max_time_step=maxT, E=E)
+    #utils.plotQseq(Qtbar_list, Qstar, Qstar, Deltas)
+    plt.figure()
+    analytical_rate = [analytical(i, np.linalg.norm(Qstar, np.inf), gamma=agent_global.gamma) for i in range(min(maxT,T))]
+    plt.title(r"$\lambda_t = \frac{log(t)}{t}$")
+    plt.plot(range(min(maxT,T)), analytical_rate, color='red', label="analytical")
+    plt.plot(range(len(Deltas)), Deltas, color="black", linestyle="dotted", label=f"fed decay to 0 {T}, err={Deltas[-1]}")
+    plt.scatter(range(0, maxT, int(E)), Deltas_sync, s=1, color="orange", label=f"sync_err")
+    plt.ylim((0, max(Deltas)))
     plt.legend()
-    plt.show()
+    print(Deltas[-1])
+    plt.show(block=True)

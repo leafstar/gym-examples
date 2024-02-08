@@ -5,7 +5,8 @@ import matplotlib.animation as animation
 from matplotlib.animation import FuncAnimation
 import time
 
-def plotQseq(Qtk_list, Qstar, Qkstar):
+
+def plotQseq(Qtk_list, Qstar, Qkstar, Deltas=None):
     # creating initial data values
     # of x and y
     mpl.use('macosx')
@@ -15,10 +16,10 @@ def plotQseq(Qtk_list, Qstar, Qkstar):
     # to run GUI event loop
     plt.ion()
 
-    # here we are creating sub plots
+    # here we are creating subplots
     figure, ax = plt.subplots(figsize=(10, 8))
-    line1, = ax.plot(x, y, 'o')
-
+    line1, = ax.plot(x, y, 'o', label="Qtk")
+    ax.ylim = np.max(Qtk_list)
     # setting title
     plt.title("Convergence of Q learning", fontsize=20)
 
@@ -36,7 +37,10 @@ def plotQseq(Qtk_list, Qstar, Qkstar):
         # updating data values
         line1.set_xdata(x)
         line1.set_ydata(new_y)
-        L.get_texts()[0].set_text(f"Qtk, t = {i}")
+        if Deltas is not None:
+            L.get_texts()[0].set_text(f"Qtk, t = {i}, Delta = {Deltas[i]}")
+        else:
+            L.get_texts()[0].set_text(f"Qtk, t = {i}")
         line1.set_alpha(0.5)
 
         # drawing updated values
@@ -46,14 +50,12 @@ def plotQseq(Qtk_list, Qstar, Qkstar):
         # loop until all UI events
         # currently waiting have been processed
         figure.canvas.flush_events()
-
-        time.sleep(0.1)
+        time.sleep(0.000002)
+        # if i > 1000:
+        #     time.sleep(0.00001)
+        # else:
+        #     time.sleep(0.002)
 
 
 if __name__ == "__main__":
     mpl.use('macosx')
-
-
-
-
-
