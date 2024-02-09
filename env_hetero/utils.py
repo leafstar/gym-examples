@@ -56,6 +56,31 @@ def plotQseq(Qtk_list, Qstar, Qkstar, Deltas=None):
         # else:
         #     time.sleep(0.002)
 
+def analytical(t):
+    """
+    Analytical solution for exponential decay for this recurrence relation.
+    Delta_{t+1} <= (1-(1-gamma)*lam_t)*Delta_{t}
+    Args:
+        t:
+        delta0: Initial difference
+        gamma: discount factor
+    Returns:
+        a list: [Delta_{0}, Delta_{1},..., Delta_{t}]
+    """
+
+    gamma = 0.99
+    a = 1
+    lam = np.log(t) ** a / t**0.8
+    E = np.log(t)
+    kappa = 1.2
+    res1 = 32/3/(1-gamma)**2*np.exp(-0.5 * np.sqrt((1 - gamma) * t * lam))
+    res2 = 32/3/(1-gamma)**2*gamma**2*kappa*lam*E
+    res3 = 16*E/(1-gamma)**3/(t+E)
+    # print(t,np.prod(1-np.array([lam(i) for i in range(t)])*(1-gamma)),delta0)
+    # return np.prod(1 - np.array([lam(i) for i in range(t)]) * (1 - gamma)) * delta0
+    return res1,res2,res3
+
 
 if __name__ == "__main__":
     mpl.use('macosx')
+    print(analytical(1e9))
